@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+v<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -29,16 +29,28 @@
     .corner-text {
       position: absolute;
       top: 10px;
-      right: 10px;
+      left: 10px;
       color: limegreen;
-      font-size: 15px;
-      font-family: sans-serif;
+      font-size: 13px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
   <div class="vertical-line"></div>
   <div class="horizontal-half-line"></div>
-  <div class="corner-text">Running Cybercode</div>
+  <div class="corner-text" id="cybercode">Running Cybercode</div>
+
+  <script>
+    const textElement = document.getElementById('cybercode');
+    const baseText = 'Running Cybercode';
+    const dots = ['.', ' ..', ' ...', ' .', ' ..', ' ...'];
+    let index = 0;
+
+    setInterval(() => {
+      textElement.textContent = baseText + dots[index];
+      index = (index + 1) % dots.length;
+    }, 500);
+  </script>
 </body>
 </html>
