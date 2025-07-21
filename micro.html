@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <title>Blank White Website</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+    .center-box {
+      position: relative;
+      width: 300px;
+      height: 350px;
+      border: 1px solid gray;
+      border-radius: 7px;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .time-display {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      margin: 0;
+      color: gray;
+      font-size: 14px;
+      user-select: none;
+      z-index: 10;
+    }
+    #outputContainer {
+      flex-grow: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+      padding-top: 25px; /* avoid overlap with time */
+      box-sizing: border-box;
+    }
+    .bottom-wrapper {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    h4.greeting {
+      color: gray;
+      margin: 0 0 5px 0;
+      user-select: none;
+      width: 100%;
+      text-align: center;
+    }
+    .center-box input {
+      width: calc(100% + 3px);
+      padding: 8px;
+      box-sizing: border-box;
+      border-radius: 0 0 7px 7px;
+      border: 1px solid lightgray;
+      outline: none;
+    }
+    .output-text {
+      border-radius: 5px;
+      padding: 8px;
+      max-width: 280px;
+      box-sizing: border-box;
+      text-align: left;
+      color: #000;
+      word-wrap: break-word;
+      background-color: lightblue;
+      transition: filter 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+  <div class="center-box">
+    <p class="time-display" id="timeDisplay">Loading...</p>
+    <div id="outputContainer"></div>
+    <div class="bottom-wrapper">
+      <h4 class="greeting" id="greetingText">Hello!</h4>
+      <input type="text" placeholder="Ask Micro..." id="textInput" />
+    </div>
+  </div>
+
+  <script>
+    const greetingEl = document.getElementById('greetingText');
+    const timeEl = document.getElementById('timeDisplay');
+    const inputEl = document.getElementById('textInput');
+    const outputContainer = document.getElementById('outputContainer');
+    const STORAGE_KEY = 'microMessages';
+
+    function updateTime() {
+      const now = new Date();
+      const hour = now.getHours();
+
+      if (hour >= 18) {
+        greetingEl.textContent = 'Good evening';
+      } else if (hour >= 12) {
+        greetingEl.textContent = 'Good afternoon';
+      } else {
+        greetingEl.textContent = 'Good morning';
+      }
+
+      let hours12 = hour % 12 || 12;
+      let minutes = now.getMinutes();
+      let ampm = hour >= 12 ? 'PM' : 'AM';
+      let minutesStr = minutes < 10 ? '0' + minutes : minutes;
+
+      timeEl.textContent = `${hours12}:${minutesStr} ${ampm}`;
+    }
+
+    let wavePosition = 0;
+    const waveSpeed = 0.02;
+    const minBrightness = 0.6;
+    const maxBrightness = 1;
+    const waveLength = 6;
+
+    function updateBrightnessWave() {
+      const boxes = outputContainer.children;
+      const count = boxes.length;
+
+      for (let i = 0; i < count; i++) {
+        let brightness =
+          minBrightness +
+          (maxBrightness - minBrightness) *
+            (0.5 + 0.5 * Math.sin((2 * Math.PI * (i / waveLength)) - wavePosition));
+        boxes[i].style.filter = `brightness(${brightness.toFixed(2)})`;
+      }
+    }
+
+    function animateWave() {
+      wavePosition += waveSpeed;
+      if (wavePosition > 2 * Math.PI) {
+        wavePosition -= 2 * Math.PI;
+      }
+      updateBrightnessWave();
+      requestAnimationFrame(animateWave);
+    }
+
+    function saveMessages() {
+      const messages = [];
+      for (const div of outputContainer.children) {
+        messages.push(div.textContent);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+
+    function loadMessages() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      try {
+        const messages = JSON.parse(saved);
+        messages.forEach(text => {
+          const div = document.createElement('div');
+          div.className = 'output-text';
+          div.textContent = text;
+          outputContainer.appendChild(div);
+        });
+        updateBrightnessWave();
+        outputContainer.scrollTop = outputContainer.scrollHeight;
+      } catch (e) {
+        console.error('Failed to load messages:', e);
+      }
+    }
+
+    function addOutputText(text) {
+      const div = document.createElement('div');
+      div.className = 'output-text';
+      div.textContent = text;
+      outputContainer.appendChild(div);
+      updateBrightnessWave();
+      outputContainer.scrollTop = outputContainer.scrollHeight;
+      saveMessages();
+    }
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const text = inputEl.value.trim();
+        if (text !== '') {
+          addOutputText(text);
+          inputEl.value = '';
+        }
+      }
+    });
+
+    updateTime();
+    setInterval(updateTime, 60000);
+    loadMessages();
+    animateWave();
+  </script>
+</body>
+</html>
