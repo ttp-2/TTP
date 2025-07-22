@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Blank White Website</title>
+  <title>Micro | Home</title>
   <style>
     body {
       margin: 0;
@@ -44,7 +44,16 @@
       box-sizing: border-box;
       border: 1px solid lightgray;
       border-radius: 0 0 7px 7px;
-      background: white;
+      background-color: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      outline: none;
+      color: black;
+    }
+
+    .center-box input:focus {
+      border: 1px solid lightgray;
+      outline: none;
     }
 
     .time-display {
