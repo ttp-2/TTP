@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Blank White Website</title>
@@ -7,194 +7,145 @@
     body {
       margin: 0;
       background-color: white;
+      background-image: url('background.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       font-family: Arial, sans-serif;
-    }
-    .center-box {
       position: relative;
+    }
+
+    .center-box {
       width: 300px;
       height: 350px;
       border: 1px solid gray;
       border-radius: 7px;
       display: flex;
       flex-direction: column;
+      justify-content: flex-end;
       padding: 10px;
-      box-sizing: border-box;
-      text-align: center;
+      position: relative;
+      overflow: hidden;
+      background-color: white;
+      z-index: 1;
     }
+
+    .center-box input {
+      width: calc(100% + 3px);
+      height: 31px;
+      padding: 5px;
+      box-sizing: border-box;
+      border: 1px solid lightgray;
+      border-radius: 0 0 7px 7px;
+    }
+
     .time-display {
       position: absolute;
-      top: 10px;
+      top: 5px;
       left: 10px;
-      margin: 0;
-      color: gray;
-      font-size: 14px;
-      user-select: none;
-      z-index: 10;
+      font-size: 12px;
+      color: #555;
     }
-    #outputContainer {
-      flex-grow: 1;
+
+    .greeting {
+      text-align: center;
+      font-size: 14px;
+      color: gray;
+      margin-bottom: 5px;
+    }
+
+    .message {
+      background-color: hsl(200, 100%, 90%);
+      margin: 2px 0;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.5s ease;
+      display: inline-block;
+      max-width: 100%;
+      word-wrap: break-word;
+    }
+
+    .message-list {
       overflow-y: auto;
+      flex: 1;
+      margin-top: 25px;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 5px;
-      padding-top: 25px; /* avoid overlap with time */
-      box-sizing: border-box;
-    }
-    .bottom-wrapper {
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-    }
-    h4.greeting {
-      color: gray;
-      margin: 0 0 5px 0;
-      user-select: none;
-      width: 100%;
-      text-align: center;
-    }
-    .center-box input {
-      width: calc(100% + 3px);
-      padding: 8px;
-      box-sizing: border-box;
-      border-radius: 0 0 7px 7px;
-      border: 1px solid lightgray;
-      outline: none;
-    }
-    .output-text {
-      border-radius: 5px;
-      padding: 8px;
-      max-width: 280px;
-      box-sizing: border-box;
-      text-align: left;
-      color: #000;
-      word-wrap: break-word;
-      background-color: lightblue;
-      transition: filter 0.1s linear;
     }
   </style>
 </head>
 <body>
-  <div class="center-box">
-    <p class="time-display" id="timeDisplay">Loading...</p>
-    <div id="outputContainer"></div>
-    <div class="bottom-wrapper">
-      <h4 class="greeting" id="greetingText">Hello!</h4>
-      <input type="text" placeholder="Ask Micro..." id="textInput" />
-    </div>
+  <div class="center-box" id="centerBox">
+    <div class="time-display" id="timeDisplay"></div>
+    <div class="message-list" id="messageList"></div>
+    <div class="greeting" id="greetingText"></div>
+    <input type="text" id="messageInput" placeholder="Ask Micro..." />
   </div>
 
   <script>
-    const greetingEl = document.getElementById('greetingText');
-    const timeEl = document.getElementById('timeDisplay');
-    const inputEl = document.getElementById('textInput');
-    const outputContainer = document.getElementById('outputContainer');
-    const STORAGE_KEY = 'microMessages';
+    const messageInput = document.getElementById('messageInput');
+    const messageList = document.getElementById('messageList');
+    const greetingText = document.getElementById('greetingText');
+    const timeDisplay = document.getElementById('timeDisplay');
 
     function updateTime() {
       const now = new Date();
-      const hour = now.getHours();
-
-      if (hour >= 18) {
-        greetingEl.textContent = 'Good evening';
-      } else if (hour >= 12) {
-        greetingEl.textContent = 'Good afternoon';
-      } else {
-        greetingEl.textContent = 'Good morning';
-      }
-
-      let hours12 = hour % 12 || 12;
-      let minutes = now.getMinutes();
-      let ampm = hour >= 12 ? 'PM' : 'AM';
-      let minutesStr = minutes < 10 ? '0' + minutes : minutes;
-
-      timeEl.textContent = `${hours12}:${minutesStr} ${ampm}`;
+      let hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      timeDisplay.textContent = `${hours}:${minutes} ${ampm}`;
     }
 
-    let wavePosition = 0;
-    const waveSpeed = 0.02;
-    const minBrightness = 0.6;
-    const maxBrightness = 1;
-    const waveLength = 6;
+    updateTime();
+    setInterval(updateTime, 1000);
 
-    function updateBrightnessWave() {
-      const boxes = outputContainer.children;
-      const count = boxes.length;
-
-      for (let i = 0; i < count; i++) {
-        let brightness =
-          minBrightness +
-          (maxBrightness - minBrightness) *
-            (0.5 + 0.5 * Math.sin((2 * Math.PI * (i / waveLength)) - wavePosition));
-        boxes[i].style.filter = `brightness(${brightness.toFixed(2)})`;
-      }
+    function setGreeting() {
+      const hour = new Date().getHours();
+      let greeting = "Good evening";
+      if (hour < 12) greeting = "Good morning";
+      else if (hour < 18) greeting = "Good afternoon";
+      greetingText.textContent = greeting;
     }
 
-    function animateWave() {
-      wavePosition += waveSpeed;
-      if (wavePosition > 2 * Math.PI) {
-        wavePosition -= 2 * Math.PI;
-      }
-      updateBrightnessWave();
-      requestAnimationFrame(animateWave);
-    }
+    setGreeting();
 
-    function saveMessages() {
-      const messages = [];
-      for (const div of outputContainer.children) {
-        messages.push(div.textContent);
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    }
+    const savedMessages = JSON.parse(localStorage.getItem("messages") || "[]");
+    savedMessages.forEach(addMessage);
 
-    function loadMessages() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return;
-      try {
-        const messages = JSON.parse(saved);
-        messages.forEach(text => {
-          const div = document.createElement('div');
-          div.className = 'output-text';
-          div.textContent = text;
-          outputContainer.appendChild(div);
-        });
-        updateBrightnessWave();
-        outputContainer.scrollTop = outputContainer.scrollHeight;
-      } catch (e) {
-        console.error('Failed to load messages:', e);
-      }
-    }
-
-    function addOutputText(text) {
-      const div = document.createElement('div');
-      div.className = 'output-text';
+    function addMessage(text) {
+      const div = document.createElement("div");
+      div.className = "message";
       div.textContent = text;
-      outputContainer.appendChild(div);
-      updateBrightnessWave();
-      outputContainer.scrollTop = outputContainer.scrollHeight;
-      saveMessages();
+      messageList.appendChild(div);
     }
 
-    inputEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const text = inputEl.value.trim();
-        if (text !== '') {
-          addOutputText(text);
-          inputEl.value = '';
-        }
+    messageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && messageInput.value.trim()) {
+        const msg = messageInput.value.trim();
+        savedMessages.push(msg);
+        localStorage.setItem("messages", JSON.stringify(savedMessages));
+        addMessage(msg);
+        messageInput.value = "";
       }
     });
 
-    updateTime();
-    setInterval(updateTime, 60000);
-    loadMessages();
-    animateWave();
+    let waveStep = 0;
+    function waveEffect() {
+      const messages = document.querySelectorAll(".message");
+      messages.forEach((el, i) => {
+        const brightness = 85 + 10 * Math.sin((i + waveStep) / 2);
+        el.style.backgroundColor = `hsl(200, 100%, ${brightness}%)`;
+      });
+      waveStep += 0.2;
+    }
+
+    setInterval(waveEffect, 100);
   </script>
 </body>
 </html>
