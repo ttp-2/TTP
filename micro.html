@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Micro | Home</title>
+  <title>Blank White Website</title>
   <style>
     body {
       margin: 0;
@@ -80,6 +80,8 @@
       display: inline-block;
       max-width: 100%;
       word-wrap: break-word;
+      cursor: default;
+      user-select: none;
     }
 
     .message-list {
@@ -106,6 +108,9 @@
     const greetingText = document.getElementById('greetingText');
     const timeDisplay = document.getElementById('timeDisplay');
 
+    // Stored messages array
+    const savedMessages = JSON.parse(localStorage.getItem("messages") || "[]");
+
     function updateTime() {
       const now = new Date();
       let hours = now.getHours();
@@ -115,9 +120,6 @@
       timeDisplay.textContent = `${hours}:${minutes} ${ampm}`;
     }
 
-    updateTime();
-    setInterval(updateTime, 1000);
-
     function setGreeting() {
       const hour = new Date().getHours();
       let greeting = "Good evening";
@@ -126,28 +128,49 @@
       greetingText.textContent = greeting;
     }
 
-    setGreeting();
-
-    const savedMessages = JSON.parse(localStorage.getItem("messages") || "[]");
-    savedMessages.forEach(addMessage);
+    function saveMessages() {
+      localStorage.setItem("messages", JSON.stringify(savedMessages));
+    }
 
     function addMessage(text) {
       const div = document.createElement("div");
       div.className = "message";
       div.textContent = text;
+
+      // Double-click event to remove message
+      div.addEventListener("dblclick", () => {
+        // Remove from DOM
+        div.remove();
+
+        // Remove from savedMessages array
+        const index = savedMessages.indexOf(text);
+        if (index > -1) {
+          savedMessages.splice(index, 1);
+          saveMessages();
+        }
+      });
+
       messageList.appendChild(div);
     }
+
+    // Load saved messages on startup
+    savedMessages.forEach(addMessage);
 
     messageInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && messageInput.value.trim()) {
         const msg = messageInput.value.trim();
         savedMessages.push(msg);
-        localStorage.setItem("messages", JSON.stringify(savedMessages));
+        saveMessages();
         addMessage(msg);
         messageInput.value = "";
       }
     });
 
+    updateTime();
+    setInterval(updateTime, 1000);
+    setGreeting();
+
+    // Wave effect
     let waveStep = 0;
     function waveEffect() {
       const messages = document.querySelectorAll(".message");
