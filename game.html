@@ -37,22 +37,21 @@
   const engine = new BABYLON.Engine(canvas, true);
   const scene = new BABYLON.Scene(engine);
 
-  // === Sky Dome ===
-  const skyDome = BABYLON.MeshBuilder.CreateSphere("skyDome", {
-    diameter: 20000,
-    segments: 32,
-    sideOrientation: BABYLON.Mesh.BACKSIDE
-  }, scene);
-  skyDome.position.y = 0;
+  // === Flat Sky ===
+  const skyPlane = BABYLON.MeshBuilder.CreatePlane("skyPlane", {width: 20000, height: 10000}, scene);
+  skyPlane.position = new BABYLON.Vector3(0, 5000, 10000);
+  skyPlane.rotation = new BABYLON.Vector3(0, Math.PI, 0);
 
   const skyMat = new BABYLON.StandardMaterial("skyMat", scene);
   const skyTex = new BABYLON.Texture("sky.png", scene);
-  skyTex.coordinatesMode = BABYLON.Texture.SPHERICAL_MODE;
   skyMat.diffuseTexture = skyTex;
   skyMat.emissiveTexture = skyTex;
   skyMat.disableLighting = true;
   skyMat.backFaceCulling = false;
-  skyDome.material = skyMat;
+  skyPlane.material = skyMat;
+  skyPlane.isPickable = false;
+  skyPlane.receiveShadows = false;
+  skyPlane.checkCollisions = false;
 
   // === Ground ===
   const ground = BABYLON.MeshBuilder.CreateGround("ground", {
@@ -70,14 +69,14 @@
 
   // === Player ===
   const player = BABYLON.MeshBuilder.CreateBox("player", { size: 1 }, scene);
-  player.position.y = 0.5;
+  player.position.y = 1.8;
   player.isVisible = false;
   player.checkCollisions = true;
-  player.ellipsoid = new BABYLON.Vector3(0.5, 0.9, 0.5);
-  player.ellipsoidOffset = new BABYLON.Vector3(0, 0.9, 0);
+  player.ellipsoid = new BABYLON.Vector3(0.5, 1.8, 0.5);
+  player.ellipsoidOffset = new BABYLON.Vector3(0, 1.8, 0);
 
   // === Camera ===
-  const camera = new BABYLON.UniversalCamera("fpsCamera", player.position.add(new BABYLON.Vector3(0, 0.9, 0)), scene);
+  const camera = new BABYLON.UniversalCamera("fpsCamera", player.position.add(new BABYLON.Vector3(0, 1.8, 0)), scene);
   camera.attachControl(canvas, true);
   camera.checkCollisions = false;
   camera.applyGravity = false;
@@ -142,8 +141,8 @@
       player.position.y += playerVelocity.y;
     }
 
-    if (player.position.y <= 0.9) {
-      player.position.y = 0.9;
+    if (player.position.y <= 1.8) {
+      player.position.y = 1.8;
       playerVelocity.y = 0;
       isOnGround = true;
     } else {
@@ -156,11 +155,11 @@
     }
 
     // Camera follows player at eye level
-    camera.position.copyFrom(player.position).addInPlace(new BABYLON.Vector3(0, 0.9, 0));
+    camera.position.copyFrom(player.position).addInPlace(new BABYLON.Vector3(0, 0, 0));
 
-    // Sky dome follows player
-    skyDome.position.x = player.position.x;
-    skyDome.position.z = player.position.z;
+    // Sky plane follows player
+    skyPlane.position.x = player.position.x;
+    skyPlane.position.z = player.position.z;
   });
 
   // === Render ===
