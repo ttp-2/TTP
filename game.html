@@ -44,6 +44,7 @@
 
   const skyMat = new BABYLON.StandardMaterial("skyMat", scene);
   const skyTex = new BABYLON.Texture("sky.png", scene);
+  skyTex.coordinatesMode = BABYLON.Texture.PLANAR_MODE;
   skyMat.diffuseTexture = skyTex;
   skyMat.emissiveTexture = skyTex;
   skyMat.disableLighting = true;
@@ -69,7 +70,7 @@
 
   // === Player ===
   const player = BABYLON.MeshBuilder.CreateBox("player", { size: 1 }, scene);
-  player.position.y = 1.8;
+  player.position.y = 3;
   player.isVisible = false;
   player.checkCollisions = true;
   player.ellipsoid = new BABYLON.Vector3(0.5, 1.8, 0.5);
@@ -141,8 +142,8 @@
       player.position.y += playerVelocity.y;
     }
 
-    if (player.position.y <= 1.8) {
-      player.position.y = 1.8;
+    if (player.position.y <= 3) {
+      player.position.y = 3;
       playerVelocity.y = 0;
       isOnGround = true;
     } else {
@@ -155,7 +156,7 @@
     }
 
     // Camera follows player at eye level
-    camera.position.copyFrom(player.position).addInPlace(new BABYLON.Vector3(0, 0, 0));
+    camera.position.copyFrom(player.position);
 
     // Sky plane follows player
     skyPlane.position.x = player.position.x;
