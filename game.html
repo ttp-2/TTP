@@ -37,23 +37,6 @@
   const engine = new BABYLON.Engine(canvas, true);
   const scene = new BABYLON.Scene(engine);
 
-  // === Flat Sky ===
-  const skyPlane = BABYLON.MeshBuilder.CreatePlane("skyPlane", {width: 20000, height: 10000}, scene);
-  skyPlane.position = new BABYLON.Vector3(0, 5000, 10000);
-  skyPlane.rotation = new BABYLON.Vector3(0, Math.PI, 0);
-
-  const skyMat = new BABYLON.StandardMaterial("skyMat", scene);
-  const skyTex = new BABYLON.Texture("sky.png", scene);
-  skyTex.coordinatesMode = BABYLON.Texture.PLANAR_MODE;
-  skyMat.diffuseTexture = skyTex;
-  skyMat.emissiveTexture = skyTex;
-  skyMat.disableLighting = true;
-  skyMat.backFaceCulling = false;
-  skyPlane.material = skyMat;
-  skyPlane.isPickable = false;
-  skyPlane.receiveShadows = false;
-  skyPlane.checkCollisions = false;
-
   // === Ground ===
   const ground = BABYLON.MeshBuilder.CreateGround("ground", {
     width: 10000,
@@ -157,10 +140,6 @@
 
     // Camera follows player at eye level
     camera.position.copyFrom(player.position);
-
-    // Sky plane follows player
-    skyPlane.position.x = player.position.x;
-    skyPlane.position.z = player.position.z;
   });
 
   // === Render ===
