@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Babylon.js First-Person Platform with Grass Texture</title>
+<title>Babylon.js FPS with Grass and Flat Sky</title>
 <style>
   html, body {
     margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%;
-    background: #87ceeb; /* sky blue */
+    background: #87ceeb;
   }
   #renderCanvas {
     width: 100%; height: 100%; touch-action: none;
@@ -25,11 +25,21 @@
 <script>
   const canvas = document.getElementById("renderCanvas");
   const engine = new BABYLON.Engine(canvas, true);
-
   const scene = new BABYLON.Scene(engine);
-  scene.clearColor = new BABYLON.Color3(0.53, 0.81, 0.92);
 
-  // Huge ground with grass texture
+  // === Sky Background ===
+  const skyPlane = BABYLON.MeshBuilder.CreatePlane("skyPlane", {width: 20000, height: 10000}, scene);
+  skyPlane.position = new BABYLON.Vector3(0, 5000, 10000); // very far forward
+  skyPlane.rotation = new BABYLON.Vector3(0, Math.PI, 0); // face the player
+  const skyMaterial = new BABYLON.StandardMaterial("skyMat", scene);
+  skyMaterial.diffuseTexture = new BABYLON.Texture("sky.png", scene);
+  skyMaterial.backFaceCulling = false;
+  skyPlane.material = skyMaterial;
+  skyPlane.isPickable = false;
+  skyPlane.receiveShadows = false;
+  skyPlane.checkCollisions = false;
+
+  // === Ground ===
   const ground = BABYLON.MeshBuilder.CreateGround("ground", {
     width: 10000,
     height: 10000
@@ -37,88 +47,73 @@
   ground.position.y = 0;
   ground.checkCollisions = true;
 
-  // Grass texture material
   const groundMaterial = new BABYLON.StandardMaterial("groundMat", scene);
   groundMaterial.diffuseTexture = new BABYLON.Texture("grass.png", scene);
   groundMaterial.diffuseTexture.uScale = 1000;
   groundMaterial.diffuseTexture.vScale = 1000;
   ground.material = groundMaterial;
 
-  // Player cube (invisible, for collisions and physics)
+  // === Player (invisible box for physics) ===
   const player = BABYLON.MeshBuilder.CreateBox("player", { size: 1 }, scene);
   player.position.y = 0.5;
   player.isVisible = false;
   player.checkCollisions = true;
-
-  // Light
-  const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-  light.intensity = 0.9;
-
-  // Gravity and collisions
-  scene.gravity = new BABYLON.Vector3(0, -0.2, 0);
-  scene.collisionsEnabled = true;
-
   player.ellipsoid = new BABYLON.Vector3(0.5, 0.9, 0.5);
   player.ellipsoidOffset = new BABYLON.Vector3(0, 0.9, 0);
 
-  // First-person camera at player eye level
+  // === Camera ===
   const camera = new BABYLON.UniversalCamera("fpsCamera", player.position.add(new BABYLON.Vector3(0, 0.9, 0)), scene);
   camera.attachControl(canvas, true);
   camera.checkCollisions = false;
   camera.applyGravity = false;
 
-  // Pointer lock for mouse look
+  // === Light ===
+  const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+  light.intensity = 0.9;
+
+  // === Scene Gravity ===
+  scene.gravity = new BABYLON.Vector3(0, -0.2, 0);
+  scene.collisionsEnabled = true;
+
+  // === Input Map ===
+  const inputMap = {};
+  scene.actionManager = new BABYLON.ActionManager(scene);
+  scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, evt => {
+    inputMap[evt.sourceEvent.key.toLowerCase()] = true;
+  }));
+  scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, evt => {
+    inputMap[evt.sourceEvent.key.toLowerCase()] = false;
+  }));
+
+  // === Pointer Lock ===
   canvas.addEventListener("click", () => {
-    canvas.requestPointerLock = canvas.requestPointerLock || 
-                                canvas.msRequestPointerLock || 
-                                canvas.mozRequestPointerLock || 
-                                canvas.webkitRequestPointerLock;
+    canvas.requestPointerLock = canvas.requestPointerLock || canvas.msRequestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
     if (canvas.requestPointerLock) {
       canvas.requestPointerLock();
     }
   });
 
-  // Movement input tracking
-  const inputMap = {};
-  scene.actionManager = new BABYLON.ActionManager(scene);
-
-  scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, evt => {
-    inputMap[evt.sourceEvent.key.toLowerCase()] = true;
-  }));
-
-  scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, evt => {
-    inputMap[evt.sourceEvent.key.toLowerCase()] = false;
-  }));
-
-  // Player physics and movement variables
+  // === Physics ===
   let playerVelocity = new BABYLON.Vector3(0, 0, 0);
-  const speed = 0.15;
+  const baseSpeed = 0.15;
   const jumpForce = 0.3;
   let isOnGround = false;
 
   scene.onBeforeRenderObservable.add(() => {
-    // Directions relative to camera
+    const runMultiplier = inputMap["shift"] ? 3 : 1;
+    const speed = baseSpeed * runMultiplier;
+
     const forward = camera.getDirection(BABYLON.Axis.Z).scaleInPlace(speed);
     const right = camera.getDirection(BABYLON.Axis.X).scaleInPlace(speed);
 
-    // Reset horizontal velocity
     playerVelocity.x = 0;
     playerVelocity.z = 0;
 
-    if (inputMap["w"]) {
-      playerVelocity.addInPlace(forward);
-    }
-    if (inputMap["s"]) {
-      playerVelocity.subtractInPlace(forward);
-    }
-    if (inputMap["a"]) {
-      playerVelocity.subtractInPlace(right);
-    }
-    if (inputMap["d"]) {
-      playerVelocity.addInPlace(right);
-    }
+    if (inputMap["w"]) playerVelocity.addInPlace(forward);
+    if (inputMap["s"]) playerVelocity.subtractInPlace(forward);
+    if (inputMap["a"]) playerVelocity.subtractInPlace(right);
+    if (inputMap["d"]) playerVelocity.addInPlace(right);
 
-    // Apply horizontal velocity
     player.position.x += playerVelocity.x;
     player.position.z += playerVelocity.z;
 
@@ -128,7 +123,7 @@
       player.position.y += playerVelocity.y;
     }
 
-    // Ground collision
+    // Ground check
     if (player.position.y <= 0.9) {
       player.position.y = 0.9;
       playerVelocity.y = 0;
@@ -137,23 +132,19 @@
       isOnGround = false;
     }
 
-    // Jumping
+    // Jump
     if (inputMap[" "] && isOnGround) {
       playerVelocity.y = jumpForce;
       isOnGround = false;
     }
 
-    // Update camera position to player eye level
+    // Camera follows player at eye level
     camera.position.copyFrom(player.position).addInPlace(new BABYLON.Vector3(0, 0.9, 0));
   });
 
-  window.addEventListener("resize", () => {
-    engine.resize();
-  });
-
-  engine.runRenderLoop(() => {
-    scene.render();
-  });
+  // === Render ===
+  window.addEventListener("resize", () => engine.resize());
+  engine.runRenderLoop(() => scene.render());
 </script>
 </body>
 </html>
